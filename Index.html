@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Uttar Pradesh Monsoon 2026 — District Rainfall Dashboard</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#18212f;--muted:#687386;--line:#e5e9f0;
+--le:#1296f3;--e:#45b9ef;--n:#16c96b;--d:#ff3b20;--ld:#f4e51c;}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink)}
+.wrap{max-width:1180px;margin:auto;padding:18px}
+.hero{background:linear-gradient(135deg,#102a43,#176b9c);color:white;border-radius:20px;padding:24px 22px;margin-bottom:14px;box-shadow:0 8px 30px #17324a22}
+.hero h1{margin:0 0 7px;font-size:clamp(25px,4vw,38px);letter-spacing:-.5px}
+.hero p{margin:0;color:#dbeeff;line-height:1.45}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px;box-shadow:0 4px 16px #17203308}
+.kpi{font-size:28px;font-weight:800} .small{font-size:12px;color:var(--muted);margin-top:3px}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.8fr);gap:14px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 4px 16px #17203308}
+.panel h2{font-size:18px;margin:2px 0 10px}
+#map{width:100%;height:650px;min-height:500px;background:#edf3f8;border-radius:13px;overflow:hidden;position:relative}
+svg{width:100%;height:100%} .district{stroke:#fff;stroke-width:.55;cursor:pointer;transition:opacity .12s,stroke-width .12s}
+.district:hover{stroke:#18212f;stroke-width:2;opacity:.88}
+.tooltip{position:fixed;z-index:20;pointer-events:none;background:#18212f;color:#fff;border-radius:10px;padding:10px 12px;font-size:13px;box-shadow:0 8px 24px #0003;display:none;max-width:250px}
+.legend{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 0}
+.leg{display:flex;align-items:center;gap:5px;font-size:12px;color:#4b5563} .sw{width:13px;height:13px;border-radius:3px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+input,select{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff;color:var(--ink);font-size:14px}
+input{flex:1;min-width:180px}
+.tablewrap{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:13px} th,td{padding:8px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#fff} th{position:sticky;top:0;background:#f8fafc;z-index:2}
+.badge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:11px;font-weight:700}
+.note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px}
+.rank{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+@media(max-width:850px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}#map{height:560px}}
+@media(max-width:480px){.wrap{padding:10px}.hero{padding:18px}.cards{grid-template-columns:repeat(2,1fr)}.kpi{font-size:23px}}
+</style>
+</head>
+<body>
+<div class="wrap"><div style="background:#fff7df;border:1px solid #f0d889;border-radius:12px;padding:10px 13px;margin:0 0 12px;font-size:12px;line-height:1.45;color:#5b4a13">
+<b>Data note:</b> Rainfall figures are based on the India Meteorological Department (IMD) State-wise District rainfall product, cumulative from 01-06-2026. The latest IMD page currently shows the 27-08-2026 observation date. District boundaries are visualisation geometry only.
+</div>
+<section class="hero">
+<h1>Uttar Pradesh Monsoon 2026</h1>
+<p><b>District rainfall status:</b> latest IMD district sheet for <b>1 June–27 August 2026</b>. Tap/hover a district for actual rainfall, normal rainfall and percentage departure.</p>
+</section>
+
+<div class="cards">
+<div class="card"><div class="kpi">15</div><div class="small">Districts with excess rainfall (≥ +20%)</div></div>
+<div class="card"><div class="kpi">26</div><div class="small">Districts in normal range (−19% to +19%)</div></div>
+<div class="card"><div class="kpi">34</div><div class="small">Districts below normal (≤ −20%)</div></div>
+<div class="card"><div class="kpi">501.0 / 564.3 mm</div><div class="small">UP state aggregate, IMD sheet through 27 Aug: −11%</div></div>
+</div>
+
+<div class="grid">
+<div class="panel">
+<h2>District rainfall map</h2>
+<div id="map"><div style="padding:18px;color:#687386">Loading district boundaries…</div></div>
+<div class="legend">
+<div class="leg"><span class="sw" style="background:var(--le)"></span>Large excess ≥60%</div>
+<div class="leg"><span class="sw" style="background:var(--e)"></span>Excess +20 to +59%</div>
+<div class="leg"><span class="sw" style="background:var(--n)"></span>Normal −19 to +19%</div>
+<div class="leg"><span class="sw" style="background:var(--d)"></span>Deficient −20 to −59%</div>
+<div class="leg"><span class="sw" style="background:var(--ld)"></span>Large deficient −60 to −99%</div>
+</div>
+</div>
+
+<div class="panel">
+<h2>Explore districts</h2>
+<div class="controls">
+<input id="search" placeholder="Search district…">
+<select id="filter">
+<option value="ALL">All categories</option>
+<option value="LE">Large excess</option><option value="E">Excess</option><option value="N">Normal</option>
+<option value="D">Deficient</option><option value="LD">Large deficient</option>
+</select>
+</div>
+<div class="tablewrap"><table><thead><tr><th>District</th><th>Actual</th><th>Normal</th><th>Departure</th></tr></thead><tbody id="tbody"></tbody></table></div>
+<div class="note"><b>How to read:</b> percentage departure = (actual − normal) / normal × 100. IMD categories follow the official rainfall legend. Values are rounded to one decimal mm.</div>
+</div>
+</div>
+
+<div class="panel" style="margin-top:14px">
+<h2>What the map says at a glance</h2>
+<div id="insights"></div>
+<div class="note">
+<b>Source:</b> India Meteorological Department (IMD), Hydromet Division, District Rainfall Distribution, cumulative period 01-06-2026 to 27-08-2026. The state aggregate shown above is from the IMD state-wise sheet available for 01-06-2026 to 27-08-2026. District boundaries are used only as map geometry and are not rainfall observations.
+</div>
+</div>
+</div>
+
+<div class="tooltip" id="tip"></div>
+
+<script>
+const rainfall = [{"district": "Agra", "actual": 412.6, "normal": 414.6, "departure": 0, "category": "N"}, {"district": "Aligarh", "actual": 278.7, "normal": 466.6, "departure": -40, "category": "D"}, {"district": "Amroha", "actual": 385.6, "normal": 656, "departure": -41, "category": "D"}, {"district": "Auraiya", "actual": 458.7, "normal": 392.1, "departure": 17, "category": "N"}, {"district": "Badaun", "actual": 552.3, "normal": 518.8, "departure": 6, "category": "N"}, {"district": "Baghpat", "actual": 443.3, "normal": 397.7, "departure": 11, "category": "N"}, {"district": "Bareilly", "actual": 558.5, "normal": 615.5, "departure": -9, "category": "N"}, {"district": "Bijnor", "actual": 883, "normal": 714.4, "departure": 24, "category": "E"}, {"district": "Bulandshahr", "actual": 403.3, "normal": 421.4, "departure": -4, "category": "N"}, {"district": "Etah", "actual": 554.8, "normal": 390, "departure": 42, "category": "E"}, {"district": "Etawah", "actual": 531.7, "normal": 434.4, "departure": 22, "category": "E"}, {"district": "Firozabad", "actual": 570.9, "normal": 444.6, "departure": 28, "category": "E"}, {"district": "Gautam Buddha Nagar", "actual": 516.8, "normal": 354.6, "departure": 46, "category": "E"}, {"district": "Ghaziabad", "actual": 153, "normal": 357.4, "departure": -57, "category": "D"}, {"district": "Hamirpur", "actual": 782, "normal": 537.7, "departure": 45, "category": "E"}, {"district": "Hapur", "actual": 276.5, "normal": 534.9, "departure": -48, "category": "D"}, {"district": "Hathras", "actual": 398.3, "normal": 440, "departure": -9, "category": "N"}, {"district": "Jalaun", "actual": 565.2, "normal": 489.5, "departure": 15, "category": "N"}, {"district": "Jhansi", "actual": 434.3, "normal": 554, "departure": -22, "category": "D"}, {"district": "Kasganj", "actual": 492.7, "normal": 512.2, "departure": -4, "category": "N"}, {"district": "Lalitpur", "actual": 681.5, "normal": 634.3, "departure": 7, "category": "N"}, {"district": "Mahoba", "actual": 726.3, "normal": 469.4, "departure": 55, "category": "E"}, {"district": "Mainpuri", "actual": 282.3, "normal": 501.3, "departure": -44, "category": "D"}, {"district": "Mathura", "actual": 232, "normal": 393, "departure": -41, "category": "D"}, {"district": "Meerut", "actual": 879.5, "normal": 508.3, "departure": 73, "category": "LE"}, {"district": "Moradabad", "actual": 643.8, "normal": 682.1, "departure": -6, "category": "N"}, {"district": "Muzaffarnagar", "actual": 928.5, "normal": 514, "departure": 81, "category": "LE"}, {"district": "Pilibhit", "actual": 195.6, "normal": 648.5, "departure": -70, "category": "LD"}, {"district": "Rampur", "actual": 485.5, "normal": 567.9, "departure": -15, "category": "N"}, {"district": "Saharanpur", "actual": 477.5, "normal": 606.3, "departure": -21, "category": "D"}, {"district": "Sambhal", "actual": 956.2, "normal": 511.3, "departure": 87, "category": "LE"}, {"district": "Shahjahanpur", "actual": 544.2, "normal": 589, "departure": -8, "category": "N"}, {"district": "Shamli", "actual": 158, "normal": 428, "departure": -63, "category": "LD"}, {"district": "Ambedkar Nagar", "actual": 528.8, "normal": 639.2, "departure": -17, "category": "N"}, {"district": "Amethi", "actual": 277.2, "normal": 511.9, "departure": -46, "category": "D"}, {"district": "Ayodhya", "actual": 515.2, "normal": 648.3, "departure": -21, "category": "D"}, {"district": "Azamgarh", "actual": 465.8, "normal": 627.2, "departure": -26, "category": "D"}, {"district": "Bahraich", "actual": 800.1, "normal": 750.3, "departure": 7, "category": "N"}, {"district": "Ballia", "actual": 443.7, "normal": 551.4, "departure": -20, "category": "D"}, {"district": "Balrampur", "actual": 522.2, "normal": 621.8, "departure": -16, "category": "N"}, {"district": "Banda", "actual": 721.3, "normal": 592.1, "departure": 22, "category": "E"}, {"district": "Barabanki", "actual": 600.3, "normal": 610.2, "departure": -2, "category": "N"}, {"district": "Basti", "actual": 458.5, "normal": 634.7, "departure": -28, "category": "D"}, {"district": "Bhadohi", "actual": 206.4, "normal": 600.8, "departure": -66, "category": "LD"}, {"district": "Chandauli", "actual": 420, "normal": 542.4, "departure": -23, "category": "D"}, {"district": "Chitrakoot", "actual": 879.6, "normal": 608.7, "departure": 45, "category": "E"}, {"district": "Deoria", "actual": 163.5, "normal": 606.5, "departure": -73, "category": "LD"}, {"district": "Farrukhabad", "actual": 441.2, "normal": 558.6, "departure": -21, "category": "D"}, {"district": "Fatehpur", "actual": 376.6, "normal": 533.6, "departure": -29, "category": "D"}, {"district": "Ghazipur", "actual": 383.1, "normal": 580.6, "departure": -34, "category": "D"}, {"district": "Gonda", "actual": 599.9, "normal": 670.2, "departure": -10, "category": "N"}, {"district": "Gorakhpur", "actual": 638.9, "normal": 954.3, "departure": -33, "category": "D"}, {"district": "Hardoi", "actual": 408.9, "normal": 503.9, "departure": -19, "category": "N"}, {"district": "Jaunpur", "actual": 210.6, "normal": 524.4, "departure": -60, "category": "LD"}, {"district": "Kannauj", "actual": 649.5, "normal": 507.2, "departure": 28, "category": "E"}, {"district": "Kanpur City", "actual": 638, "normal": 480.6, "departure": 33, "category": "E"}, {"district": "Kanpur Dehat", "actual": 157.7, "normal": 439.7, "departure": -64, "category": "LD"}, {"district": "Kaushambi", "actual": 217.5, "normal": 428, "departure": -49, "category": "D"}, {"district": "Kheri", "actual": 676.1, "normal": 705.7, "departure": -4, "category": "N"}, {"district": "Kushinagar", "actual": 200.1, "normal": 572.4, "departure": -65, "category": "LD"}, {"district": "Lucknow", "actual": 479.5, "normal": 496.6, "departure": -3, "category": "N"}, {"district": "Maharajganj", "actual": 591.4, "normal": 775.7, "departure": -24, "category": "D"}, {"district": "Mau", "actual": 212.5, "normal": 606.9, "departure": -65, "category": "LD"}, {"district": "Mirzapur", "actual": 703.7, "normal": 653, "departure": 8, "category": "N"}, {"district": "Pratapgarh", "actual": 628.8, "normal": 576.4, "departure": 9, "category": "N"}, {"district": "Prayagraj", "actual": 712.7, "normal": 541.6, "departure": 32, "category": "E"}, {"district": "Raebareli", "actual": 247, "normal": 325.6, "departure": -24, "category": "D"}, {"district": "Sant Kabir Nagar", "actual": 387.2, "normal": 784, "departure": -51, "category": "D"}, {"district": "Shravasti", "actual": 546.7, "normal": 853.3, "departure": -36, "category": "D"}, {"district": "Siddharth Nagar", "actual": 514.4, "normal": 818, "departure": -37, "category": "D"}, {"district": "Sitapur", "actual": 347.6, "normal": 620.9, "departure": -44, "category": "D"}, {"district": "Sonbhadra", "actual": 631.9, "normal": 652.2, "departure": -3, "category": "N"}, {"district": "Sultanpur", "actual": 585.3, "normal": 613.1, "departure": -5, "category": "N"}, {"district": "Unnao", "actual": 332.8, "normal": 482.6, "departure": -31, "category": "D"}, {"district": "Varanasi", "actual": 591.9, "normal": 584, "departure": 1, "category": "N"}];
+const byName = new Map(rainfall.map(d => [d.district.toLowerCase(), d]));
+const aliases = {
+  "budaun":"Badaun","lakhimpur kheri":"Kheri","kanpur nagar":"Kanpur City",
+  "rae bareli":"Raebareli","rae bareli":"Raebareli","sant ravidas nagar":"Bhadohi",
+  "siddharthnagar":"Siddharth Nagar","gautam buddha nagar":"Gautam Buddha Nagar"
+};
+const colors={LE:"#1296f3",E:"#45b9ef",N:"#16c96b",D:"#ff3b20",LD:"#f4e51c"};
+const names={LE:"Large excess",E:"Excess",N:"Normal",D:"Deficient",LD:"Large deficient"};
+
+function normaliseName(s){
+  if(!s) return "";
+  let x=s.toLowerCase().replace(/district|\(|\)|\.|_/g,"").replace(/\s+/g," ").trim();
+  if(aliases[x]) return aliases[x].toLowerCase();
+  return x;
+}
+const normalMap=new Map(rainfall.map(d=>[normaliseName(d.district),d]));
+
+function badge(cat){
+  return `<span class="badge" style="background:${colors[cat]}22;color:#243042">${names[cat]}</span>`;
+}
+
+function renderTable(){
+  const q=document.getElementById("search").value.toLowerCase().trim();
+  const f=document.getElementById("filter").value;
+  const arr=rainfall.filter(d=>(f==="ALL"||d.category===f)&&(!q||d.district.toLowerCase().includes(q)))
+    .sort((a,b)=>a.departure-b.departure);
+  document.getElementById("tbody").innerHTML=arr.map(d=>`<tr data-name="${d.district}">
+  <td><b>${d.district}</b><br>${badge(d.category)}</td>
+  <td>${d.actual.toFixed(1)}</td><td>${d.normal.toFixed(1)}</td><td>${d.departure>0?"+":""}${d.departure}%</td></tr>`).join("");
+}
+renderTable();
+document.getElementById("search").oninput=renderTable;
+document.getElementById("filter").onchange=renderTable;
+
+const maxEx=[...rainfall].sort((a,b)=>b.departure-a.departure).slice(0,5);
+const maxDef=[...rainfall].sort((a,b)=>a.departure-b.departure).slice(0,5);
+document.getElementById("insights").innerHTML=`
+<div class="rank"><b>Highest positive departures</b><span>${maxEx.map(x=>x.district+" "+(x.departure>0?"+":"")+x.departure+"%").join(" · ")}</span></div>
+<div class="rank"><b>Largest deficits</b><span>${maxDef.map(x=>x.district+" "+x.departure+"%").join(" · ")}</span></div>
+<div class="rank"><b>Lucknow</b><span>479.5 mm vs 496.6 mm normal → −3% (Normal)</span></div>
+`;
+
+async function drawMap(){
+  const map=document.getElementById("map");
+  try{
+    const topo=await d3.json("https://raw.githubusercontent.com/guneetnarula/indian-district-boundaries/refs/heads/master/topojson/state-wise/uttarpradesh.json");
+    const obj=topo.objects[Object.keys(topo.objects)[0]];
+    const geo=topojson.feature(topo,obj);
+    map.innerHTML="";
+    const w=map.clientWidth,h=map.clientHeight;
+    const svg=d3.select(map).append("svg").attr("viewBox",`0 0 ${w} ${h}`).attr("preserveAspectRatio","xMidYMid meet");
+    const projection=d3.geoMercator().fitSize([w-12,h-12],geo);
+    const path=d3.geoPath(projection);
+    const g=svg.append("g");
+    const tip=document.getElementById("tip");
+    g.selectAll("path").data(geo.features).join("path")
+      .attr("class","district")
+      .attr("d",path)
+      .attr("fill",d=>{
+        const p=d.properties||{};
+        const n=p.district||p.DISTRICT||p.District||p.dtname||p.name||p.NAME_2||"";
+        const r=normalMap.get(normaliseName(n));
+        return r?colors[r.category]:"#d7dde5";
+      })
+      .on("mousemove",(ev,d)=>{
+        const p=d.properties||{};
+        const n=p.district||p.DISTRICT||p.District||p.dtname||p.name||p.NAME_2||"Unknown district";
+        const r=normalMap.get(normaliseName(n));
+        tip.style.display="block";
+        tip.style.left=(ev.clientX+14)+"px"; tip.style.top=(ev.clientY+14)+"px";
+        tip.innerHTML=r?`<b>${r.district}</b><br>${names[r.category]} · ${r.departure>0?"+":""}${r.departure}%<br>${r.actual.toFixed(1)} mm actual · ${r.normal.toFixed(1)} mm normal`:`<b>${n}</b><br>Rainfall data not matched`;
+      })
+      .on("mouseleave",()=>tip.style.display="none")
+      .on("click",(ev,d)=>{
+        const p=d.properties||{}; const n=p.district||p.DISTRICT||p.District||p.dtname||p.name||p.NAME_2||"";
+        const r=normalMap.get(normaliseName(n)); if(!r) return;
+        document.getElementById("search").value=r.district; document.getElementById("filter").value="ALL"; renderTable();
+      });
+  }catch(e){
+    map.innerHTML=`<div style="padding:18px;color:#687386"><b>Map boundary could not be loaded.</b><br>The verified IMD data table remains fully available below. If you are offline, reconnect and reload the page.</div>`;
+  }
+}
+drawMap();
+</script>
+</body></html>
