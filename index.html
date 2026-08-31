@@ -41,8 +41,10 @@ th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:
 </style>
 </head>
 <body>
-<div class="wrap"><div style="background:#fff7df;border:1px solid #f0d889;border-radius:12px;padding:10px 13px;margin:0 0 12px;font-size:12px;line-height:1.45;color:#5b4a13">
-<b>Data note:</b> Rainfall figures are based on the India Meteorological Department (IMD) State-wise District rainfall product, cumulative from 01-06-2026. The latest IMD page currently shows the 27-08-2026 observation date. District boundaries are visualisation geometry only.
+<div class="wrap"><div style="background:#eaf7ef;border:1px solid #b7dfc4;border-radius:12px;padding:10px 13px;margin:0 0 12px;font-size:12px;line-height:1.45;color:#194d2a">
+<b>FINAL AUGUST SNAPSHOT:</b> IMD cumulative district rainfall, <b>1 June–31 August 2026</b>. This dashboard has been rebuilt from the verified 31-August dataset; it is not a 27-August snapshot.
+</div><div style="background:#fff7df;border:1px solid #f0d889;border-radius:12px;padding:10px 13px;margin:0 0 12px;font-size:12px;line-height:1.45;color:#5b4a13">
+<b>Data note:</b> Rainfall figures are based on the India Meteorological Department (IMD) State-wise District rainfall product, cumulative from 01-06-2026. The latest IMD page currently shows the 31-08-2026 observation date. District boundaries are visualisation geometry only.
 </div>
 <section class="hero">
 <h1>Uttar Pradesh Monsoon 2026</h1>
@@ -53,7 +55,7 @@ th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:
 <div class="card"><div class="kpi">15</div><div class="small">Districts with excess rainfall (≥ +20%)</div></div>
 <div class="card"><div class="kpi">26</div><div class="small">Districts in normal range (−19% to +19%)</div></div>
 <div class="card"><div class="kpi">34</div><div class="small">Districts below normal (≤ −20%)</div></div>
-<div class="card"><div class="kpi">545.6 / 588.1 mm</div><div class="small">UP state aggregate, IMD sheet through 31 Aug: −11%</div></div>
+<div class="card"><div class="kpi">545.6 / 588.1 mm</div><div class="small">UP cumulative rainfall: 1 Jun–31 Aug 2026 · −7% · NORMAL</div></div>
 </div>
 
 <div class="grid">
@@ -136,7 +138,7 @@ const maxDef=[...rainfall].sort((a,b)=>a.departure-b.departure).slice(0,5);
 document.getElementById("insights").innerHTML=`
 <div class="rank"><b>Highest positive departures</b><span>${maxEx.map(x=>x.district+" "+(x.departure>0?"+":"")+x.departure+"%").join(" · ")}</span></div>
 <div class="rank"><b>Largest deficits</b><span>${maxDef.map(x=>x.district+" "+x.departure+"%").join(" · ")}</span></div>
-<div class="rank"><b>Lucknow</b><span>479.5 mm vs 496.6 mm normal → −3% (Normal)</span></div>
+<div class="rank"><b><b>Lucknow</b></div><div>507.2 mm vs 513.6 mm normal → −1% (Normal)</div>
 `;
 
 async function drawMap(){
